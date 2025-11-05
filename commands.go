@@ -1,7 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
 )
 
@@ -26,12 +30,104 @@ func commandHelp() error{
 	return nil
 }
 
+func commandMap() error{
+
+	var res *http.Response
+	var err error
+
+	if location.Next != "" {
+		res, err =  http.Get(location.Next)
+		if err != nil{
+		return  err
+		}
+		
+	}else {
+		res, err =  http.Get("https://pokeapi.co/api/v2/location-area/")
+		if err != nil{
+		return  err
+		}
+	}
+	
+	body, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+	if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil{
+		return  err
+	}
+	
+	err = json.Unmarshal(body, &location)
+	if err != nil{
+		return  err
+	}
+	
+	for _, loc := range location.Results {
+		fmt.Println(loc.Name)
+	}
+
+	return nil
+}
+
+func commandMapBack() error{
+	/*if location.Previous == ""{
+		fmt.Println("no previous map from here")
+		return nil
+	}*/
+
+	if location.Previous == "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20" || 
+	location.Previous == "" {
+		fmt.Println("you're on the first page")
+		return nil
+	}
+
+	var res *http.Response
+	var err error
+
+	res, err =  http.Get(location.Previous)
+	if err != nil{
+		return  err
+	}
+
+	body, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	if res.StatusCode > 299 {
+		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+	}
+	if err != nil{
+		return  err
+	}
+	
+	err = json.Unmarshal(body, &location)
+	if err != nil{
+		return  err
+	}
+	
+	for _, loc := range location.Results {
+		fmt.Println(loc.Name)
+	}
+
+	return nil
+}
 
 type cliCommand struct {
 	name        string
 	description string
 	callback    func() error
+	confiq		*Config
 }
+
+type Config struct {
+	Next 		string `json:"next"`
+	Previous 	string `json:"previous"`
+	Results  []struct {
+        Name string `json:"name"`
+        URL  string `json:"url"`
+    } `json:"results"`
+}
+
+var location Config
 
 func getCommands() map[string]cliCommand {
 	return 	map[string]cliCommand{
@@ -45,5 +141,18 @@ func getCommands() map[string]cliCommand {
 				description: "Displays a help message",
 				callback:    commandHelp,
 			},
+			"map": {
+				name:        "map",
+				description: "Displays a next 20 location",
+				callback:    commandMap,
+				confiq: 	 &Config{},
+			},
+			"mapb": {
+				name:        "mapb",
+				description: "Displays a previous 20 location",
+				callback:    commandMapBack,
+				confiq: 	 &Config{},
+			},
 		}
 }
+
