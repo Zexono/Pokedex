@@ -7,7 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
+	"github.com/Zexono/pokedexcli/internal"
 )
+
+var cache = internal.NewCache(20 * time.Second)
+//internal.Cache{}
 
 func commandNotFound() error{
 	fmt.Println("Unknown command")
@@ -30,43 +36,44 @@ func commandHelp() error{
 	return nil
 }
 
-func commandMap() error{
+func commandMap() error {
+    var url string
+    if location.Next != "" {
+        url = location.Next
+    } else {
+        url = "https://pokeapi.co/api/v2/location-area/"
+    }
 
-	var res *http.Response
-	var err error
+    var body []byte
+    if data, ok := cache.Get(url); ok {
+		fmt.Println("[cache] hit:", url)
+        body = data
+    } else {
+        res, err := http.Get(url)
+		fmt.Println("[cache] miss:", url)
+        if err != nil {
+            return err
+        }
+        defer res.Body.Close()
 
-	if location.Next != "" {
-		res, err =  http.Get(location.Next)
-		if err != nil{
-		return  err
-		}
-		
-	}else {
-		res, err =  http.Get("https://pokeapi.co/api/v2/location-area/")
-		if err != nil{
-		return  err
-		}
-	}
-	
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
-	}
-	if err != nil{
-		return  err
-	}
-	
-	err = json.Unmarshal(body, &location)
-	if err != nil{
-		return  err
-	}
-	
-	for _, loc := range location.Results {
-		fmt.Println(loc.Name)
-	}
+        b, err := io.ReadAll(res.Body)
+        if err != nil {
+            return err
+        }
+        if res.StatusCode > 299 {
+            return fmt.Errorf("status %d: %s", res.StatusCode, string(b))
+        }
+        cache.Add(url, b)
+        body = b
+    }
 
-	return nil
+    if err := json.Unmarshal(body, &location); err != nil {
+        return err
+    }
+    for _, loc := range location.Results {
+        fmt.Println(loc.Name)
+    }
+    return nil
 }
 
 func commandMapBack() error{
@@ -75,31 +82,40 @@ func commandMapBack() error{
 		return nil
 	}*/
 
-	if location.Previous == "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20" || 
-	location.Previous == "" {
+	//if location.Previous == "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20" || 
+	if location.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
 	}
 
-	var res *http.Response
-	var err error
+	url := location.Previous
 
-	res, err =  http.Get(location.Previous)
-	if err != nil{
-		return  err
-	}
+	//var res *http.Response
+	//var err error
+	var body []byte
+    if data, ok := cache.Get(url); ok {
+		fmt.Println("[cache] hit:", url)
+        body = data
+    }else{
+		res, err :=  http.Get(url)
+		fmt.Println("[cache] miss:", url)
+		if err != nil{
+			return  err
+		}
 
-	body, err := io.ReadAll(res.Body)
-	defer res.Body.Close()
+		b, err := io.ReadAll(res.Body)
+		defer res.Body.Close()
 
-	if res.StatusCode > 299 {
-		log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		if res.StatusCode > 299 {
+			log.Fatalf("Response failed with status code: %d and\nbody: %s\n", res.StatusCode, body)
+		}
+		if err != nil{
+			return  err
+		}
+		cache.Add(url, b)
+        body = b
 	}
-	if err != nil{
-		return  err
-	}
-	
-	err = json.Unmarshal(body, &location)
+	err := json.Unmarshal(body, &location)
 	if err != nil{
 		return  err
 	}

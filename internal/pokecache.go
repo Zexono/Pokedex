@@ -19,13 +19,13 @@ type cacheEntry struct{
 }
 
 
-func (c *Cache) NewCache(interval time.Duration) *Cache{
+func NewCache(interval time.Duration) *Cache{
 
 	cache := Cache{
 		hold: map[string]cacheEntry{},
 		interval: interval,
 	}
-	go c.reapLoop()
+	go cache.reapLoop()
 	return &cache
 }
 
