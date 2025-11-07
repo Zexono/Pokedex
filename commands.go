@@ -77,12 +77,7 @@ func commandMap() error {
 }
 
 func commandMapBack() error{
-	/*if location.Previous == ""{
-		fmt.Println("no previous map from here")
-		return nil
-	}*/
 
-	//if location.Previous == "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20" || 
 	if location.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -90,8 +85,6 @@ func commandMapBack() error{
 
 	url := location.Previous
 
-	//var res *http.Response
-	//var err error
 	var body []byte
     if data, ok := cache.Get(url); ok {
 		fmt.Println("[cache] hit:", url)
@@ -131,10 +124,11 @@ type cliCommand struct {
 	name        string
 	description string
 	callback    func() error
-	confiq		*Config
+	
 }
 
-type Config struct {
+
+type listLocation struct {
 	Next 		string `json:"next"`
 	Previous 	string `json:"previous"`
 	Results  []struct {
@@ -143,7 +137,7 @@ type Config struct {
     } `json:"results"`
 }
 
-var location Config
+var location listLocation
 
 func getCommands() map[string]cliCommand {
 	return 	map[string]cliCommand{
@@ -160,14 +154,12 @@ func getCommands() map[string]cliCommand {
 			"map": {
 				name:        "map",
 				description: "Displays a next 20 location",
-				callback:    commandMap,
-				confiq: 	 &Config{},
+				callback:    commandMap,	
 			},
 			"mapb": {
 				name:        "mapb",
 				description: "Displays a previous 20 location",
 				callback:    commandMapBack,
-				confiq: 	 &Config{},
 			},
 		}
 }
