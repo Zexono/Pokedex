@@ -10,7 +10,7 @@ import (
 func main(){
 	
 	scanner := bufio.NewScanner(os.Stdin)
-
+	con := &config{}
 	for {
 		fmt.Print("Pokedex >")
 		scanner.Scan()
@@ -18,12 +18,21 @@ func main(){
 		command := cleanInput(user_input)
 
 		if val,have := getCommands()[command[0]]; have {
-			err := val.callback()
-			if err != nil {
+			
+			if val.name == "explore" && len(command) > 1{
+				con.areaName = command[1]
+				err := val.callback(con)
+				if err != nil {
 				fmt.Println(err)
+				}
+			}else {
+				err := val.callback(con)
+				if err != nil {
+				fmt.Println(err)
+				}
 			}
 		}else {
-			commandNotFound()
+			commandNotFound(con)
 		}
 
 	}
