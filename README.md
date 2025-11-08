@@ -15,4 +15,6 @@ explore: explore <area_name>
          Displays a Pokemon in area 
 catch: catch <pokemon_name>
          to catch a Pokemon
+inspect: inspect <pokemon_name>
+         allow players to see details about a Pokemon if they have seen it before (or in our case, caught it)
 ```

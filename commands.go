@@ -227,6 +227,27 @@ func commandCatch(con *config) error{
 	return nil
 }
 
+func commandInspect(con *config) error{
+	if val,have := myPokedex[con.pokemonName] ; have{
+		fmt.Printf("Name: %s \n",val.Name)
+		fmt.Printf("Height: %v \n",val.Height)
+		fmt.Printf("Weight: %v \n",val.Weight)
+		//fmt.Printf("stats : %v \n",val.Stats)
+		fmt.Println("Stats: ")
+		for _, v := range val.Stats {
+			fmt.Printf(" -%s: %v\n",v.Stat.Name,v.BaseStat)
+		}
+		fmt.Println("Type: ")
+		for _, v := range val.Types {
+			fmt.Printf(" -%s\n",v.Type.Name)
+		}
+		return nil
+		
+	}
+	fmt.Println("you have not caught that pokemon")
+	return nil
+}
+
 type cliCommand struct {
 	name        string
 	description string
@@ -271,6 +292,11 @@ func getCommands() map[string]cliCommand {
 				name:        "catch",
 				description: "catch <pokemon_name>\n	 to catch a Pokemon",
 				callback:    commandCatch,
+			},
+			"inspect": {
+				name:        "inspect",
+				description: "inspect <pokemon_name>\n	 allow players to see details about a Pokemon if they have seen it before (or in our case, caught it)",
+				callback:    commandInspect,
 			},
 		}
 }
