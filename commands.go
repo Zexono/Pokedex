@@ -218,6 +218,7 @@ func commandCatch(con *config) error{
 		key := pokemon.Name //what if want tp catch same pokemon? //edit later
 		myPokedex[key] = pokemon
 		fmt.Printf("%s was caught! \n",pokemon.Name)
+		fmt.Println("You may now inspect it with the inspect command.")
 		return nil
 
 	}
@@ -245,6 +246,17 @@ func commandInspect(con *config) error{
 		
 	}
 	fmt.Println("you have not caught that pokemon")
+	return nil
+}
+
+func commandPokedex(con *config) error{
+	if len(myPokedex) == 0 {
+		fmt.Println("Don't have any Pokemon yet")
+		return nil
+	}
+	for _, v := range myPokedex {
+		fmt.Printf(" -%s \n",v.Name)
+	}
 	return nil
 }
 
@@ -297,6 +309,11 @@ func getCommands() map[string]cliCommand {
 				name:        "inspect",
 				description: "inspect <pokemon_name>\n	 allow players to see details about a Pokemon if they have seen it before (or in our case, caught it)",
 				callback:    commandInspect,
+			},
+			"pokedex": {
+				name:        "pokedex",
+				description: "show a list of all the names of the Pokemon the user has caught",
+				callback:    commandPokedex,
 			},
 		}
 }
