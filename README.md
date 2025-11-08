@@ -13,4 +13,6 @@ map: Displays a next 20 location
 mapb: Displays a previous 20 location 
 explore: explore <area_name>
          Displays a Pokemon in area 
+catch: catch <pokemon_name>
+         to catch a Pokemon
 ```

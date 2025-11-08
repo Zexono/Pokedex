@@ -25,6 +25,12 @@ func main(){
 				if err != nil {
 				fmt.Println(err)
 				}
+			}else if  val.name == "catch" && len(command) > 1{
+				con.pokemonName = command[1]
+				err := val.callback(con)
+				if err != nil {
+				fmt.Println(err)
+				}
 			}else {
 				err := val.callback(con)
 				if err != nil {

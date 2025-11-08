@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -13,6 +15,7 @@ import (
 )
 const(
 	baseURL = "https://pokeapi.co/api/v2/location-area/"
+	pokeURL = "https://pokeapi.co/api/v2/pokemon/"
 )
 var cache = internal.NewCache(20 * time.Second)
 //internal.Cache{}
@@ -169,6 +172,61 @@ func commandExplore(con *config) error{
 	return nil
 }
 
+func commandCatch(con *config) error{
+	rand.Float32()
+	var url string
+	var pokemon pokemonData
+	if con.pokemonName == "" {
+		return fmt.Errorf("plz input Pokemon name you want to catch")
+	}
+	url = pokeURL+con.pokemonName
+
+	var body []byte
+    if data, ok := cache.Get(url); ok {
+		fmt.Println("[cache] hit:", url)
+        body = data
+    } else {
+        res, err := http.Get(url)
+		fmt.Println("[cache] miss:", url)
+        if err != nil {
+            return err
+        }
+        defer res.Body.Close()
+
+        b, err := io.ReadAll(res.Body)
+        if err != nil {
+            return err
+        }
+        if res.StatusCode > 299 {
+            return fmt.Errorf("status %d: %s", res.StatusCode, string(b))
+        }
+        cache.Add(url, b)
+        body = b
+    }
+
+    if err := json.Unmarshal(body, &pokemon); err != nil {
+        return err
+    }
+	
+	fmt.Printf("Throwing a Pokeball at %s... \n",pokemon.Name)
+	//edit catch difficulity later
+	//difficulity := pokemon.BaseExperience
+	//formular := 1 + (pokemon.BaseExperience - 1) * (99) / (325 - 1)
+	difficulity := int(math.Round(float64(1 + (pokemon.BaseExperience - 1) * (99) / (325 - 1))))
+
+	if rand.Intn(100) >= difficulity {
+		key := pokemon.Name //what if want tp catch same pokemon? //edit later
+		myPokedex[key] = pokemon
+		fmt.Printf("%s was caught! \n",pokemon.Name)
+		return nil
+
+	}
+
+	fmt.Printf("%s escaped! \n",pokemon.Name)
+	
+	return nil
+}
+
 type cliCommand struct {
 	name        string
 	description string
@@ -178,7 +236,7 @@ type cliCommand struct {
 
 type config struct {
 	areaName 	string
-	//pokemonName	string //future if want pokemon stat
+	pokemonName	string //future if want pokemon stat
 }
 
 
@@ -208,6 +266,11 @@ func getCommands() map[string]cliCommand {
 				name:        "explore",
 				description: "explore <area_name>\n	 Displays a Pokemon in area",
 				callback:    commandExplore,
+			},
+			"catch": {
+				name:        "catch",
+				description: "catch <pokemon_name>\n	 to catch a Pokemon",
+				callback:    commandCatch,
 			},
 		}
 }
